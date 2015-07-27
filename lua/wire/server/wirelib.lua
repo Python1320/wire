@@ -47,10 +47,13 @@ local Inputs = {}
 local Outputs = {}
 local CurLink = {}
 
+local frametime = FrameTime()
+local now = CurTime()
+local max_overtime = now + frametime*4
 hook.Add("Think", "WireLib_Think", function()
-	for idx,port in pairs(Outputs) do
-		port.TriggerLimit = 4
-	end
+	frametime = FrameTime()
+	now = CurTime()
+	max_overtime = now + frametime * 4
 end)
 
 -- helper function that pcalls an input
@@ -499,8 +502,12 @@ function WireLib.TriggerOutput(ent, oname, value, iter)
 
 	local output = ent.Outputs[oname]
 	if (output) and (value ~= output.Value or output.Type == "ARRAY" or output.Type == "TABLE") then
-		if (output.TriggerLimit <= 0) then return end
-		output.TriggerLimit = output.TriggerLimit - 1
+				
+		local lastfire = output.TriggerLimit
+		
+		if lastfire >= max_overtime then return end
+		
+		output.TriggerLimit = (lastfire < now and now or lastfire) + frametime
 
 		output.Value = value
 
